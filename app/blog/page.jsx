@@ -1,37 +1,46 @@
+'use client';
 
-
+import { getPosts } from "@/services/getPosts";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
-async function getData() {
-    const response = fetch("https://jsonplaceholder.typicode.com/posts", {
-        next: {
-            revalidate: 60,
-        }
-    });
-
-    const data = (await response).json();
-    return data;
-}
 
 export const metadata = {
     title: "Blog"
 }
 
 
-export default async function Blog () {
+export default function Blog () {
 
-    const posts = await getData();
+    const [posts, setPosts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [search, setSearch] = useState("");
+
+    useEffect(() => {
+        getPosts().then(d => setPosts(d)).finally(() => setLoading(false))
+
+    }, []);
+
+    const searchPost = async() => {
+        const response = await fetch(`https://jsonplaceholder.typicode.com/posts?q=${search}`)
+        const data = await response.json();
+        setPosts(data);
+    }
 
     return (
         <>
             <h1>Blog</h1>
+            <input type="text" value={search} onChange={(eo) => setSearch(eo.target.value)}/>
+            <button onClick={searchPost}>Start</button>
             <ul>
                 {
-                    posts && posts.map(elem => (
+                    !loading ? posts.map(elem => (
                         <li key={elem.id}>
                             <Link href={`/blog/${elem.id}`}>{elem.title}</Link>
                         </li>
-                    ))
+                    )) : <div>
+                        ...loading
+                    </div>
                 }
             </ul>
         </>
